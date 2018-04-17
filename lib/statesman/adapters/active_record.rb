@@ -55,7 +55,15 @@ module Statesman
         if force_reload
           @last_transition = history(force_reload: true).last
         else
-          @last_transition ||= history.last
+          # why(longer version of memoization, where we care about nil)
+          #  - last_transition was nil, return nil without checking again
+          #  - last_transition was set to a history, return it
+          #  - last_transition has *never* been set, history.last
+          if instance_variable_defined?(:@last_transition)
+            @last_transition
+          else
+            @last_transition = history.last
+          end
         end
       end
 
