@@ -176,10 +176,11 @@ module Statesman
       send(:after_initialize) if respond_to? :after_initialize
     end
 
-    def current_state(force_reload: false)
-      last_action = last_transition(force_reload: force_reload)
-      last_action ? last_action.to_state : self.class.initial_state
+     def current_state(force_reload: false)
+      # go to database
+      last_action = last_transition(force_reload: force_reload).to_state
     end
+
 
     def in_state?(*states)
       states.flatten.any? { |state| current_state == state.to_s }
@@ -192,7 +193,13 @@ module Statesman
     end
 
     def last_transition(force_reload: false)
-      @storage_adapter.last(force_reload: force_reload)
+      @last_t = nil if force_reload
+      @last_t ||= _last_transition(force_reload: force_reload)
+    end
+
+    def _last_transition(force_reload: false)
+      last_action = @storage_adapter.last(force_reload: force_reload)
+      last_action || OpenStruct.new(to_state: self.class.initial_state)
     end
 
     def can_transition_to?(new_state, metadata = {})
